@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="section-header">
+    <h2>Чат — сотрудники</h2>
+    <p>Выберите пользователя для общения</p>
+</div>
+
+<div class="cards-grid">
+    {% for u in users %}
+        <a class="card card-link" href="{% url 'service_desk:chat_room' u.id %}">
+            <h3 class="card-title">{{ u.username }}</h3>
+            <p class="card-text">Нажмите, чтобы открыть чат</p>
+        </a>
+    {% empty %}
+        <p class="cell-empty">Нет пользователей.</p>
+    {% endfor %}
+</div>
+{% endblock %}

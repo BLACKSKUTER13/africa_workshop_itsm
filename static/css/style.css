@@ -546,3 +546,41 @@ body {
         align-items: flex-start;
     }
 }
+
+/* ======================================================
+   ABSOLUTE FIX FOR CHAT INPUT — overrides everything
+   ====================================================== */
+
+#msg-input.chat-input {
+    background: rgba(30, 41, 59, 0.9) !important; /* глубокий синий фон */
+    border: 1px solid rgba(148, 163, 184, 0.7) !important;
+    color: var(--text-main) !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+
+    /* отключение автозаливки браузера */
+    -webkit-box-shadow: 0 0 0px 1000px rgba(30, 41, 59, 0.9) inset !important;
+    box-shadow: 0 0 0px 1000px rgba(30, 41, 59, 0.9) inset !important;
+}
+
+#msg-input.chat-input::placeholder {
+    color: var(--text-muted) !important;
+}
+
+#msg-input.chat-input:focus {
+    background: rgba(15, 23, 42, 1) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 6px rgba(56, 189, 248, 0.6) !important;
+
+    /* снова гасим автозаливку */
+    -webkit-box-shadow:
+        0 0 6px rgba(56, 189, 248, 0.6),
+        0 0 0px 1000px rgba(15, 23, 42, 1) inset !important;
+    box-shadow:
+        0 0 6px rgba(56, 189, 248, 0.6),
+        0 0 0px 1000px rgba(15, 23, 42, 1) inset !important;
+}

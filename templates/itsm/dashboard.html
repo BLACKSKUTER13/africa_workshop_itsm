@@ -8,15 +8,22 @@
 </div>
 
 <div class="cards-grid">
+
     <a href="{% url 'service_desk:incidents_list' %}" class="card card-link">
         <h3 class="card-title">Инциденты</h3>
-        <p class="card-text">Просмотр, назначение и обработка обращений</p>
+        <p class="card-text">Просмотр обращений</p>
     </a>
 
     <a href="{% url 'service_desk:services_list' %}" class="card card-link">
         <h3 class="card-title">Услуги</h3>
-        <p class="card-text">Управление каталогом услуг</p>
+        <p class="card-text">Управление каталогом</p>
     </a>
+
+    <a href="{% url 'service_desk:chat_list' %}" class="card card-link">
+        <h3 class="card-title">Чат сотрудников</h3>
+        <p class="card-text">Общение внутри компании</p>
+    </a>
+
 </div>
 
 {% endblock %}

@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden
 from django.contrib.auth.models import User
 
-from .models import Service, Incident
+from .models import Service, Incident, Message
 from .forms import PublicIncidentForm, ServiceForm
 
 
@@ -190,3 +190,70 @@ def service_delete(request, pk):
         service.delete()
         return redirect('service_desk:services_list')
     return render(request, 'itsm/service_confirm_delete.html', {'service': service})
+
+# ========================================
+#                ЧАТ
+# ========================================
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Message
+
+
+@login_required
+def chat_list(request):
+    """Список пользователей, с которыми можно общаться."""
+    users = User.objects.exclude(id=request.user.id)
+    return render(request, "chat/chat_list.html", {"users": users})
+
+
+@login_required
+def chat_room(request, user_id):
+    """Комната чата 1-на-1."""
+    other = get_object_or_404(User, id=user_id)
+    return render(request, "chat/chat_room.html", {"other": other})
+
+
+@login_required
+def api_get_messages(request, user_id):
+    other = get_object_or_404(User, id=user_id)
+
+    messages = Message.objects.filter(
+        sender__in=[request.user, other],
+        receiver__in=[request.user, other]
+    ).order_by("created_at")
+
+    return JsonResponse({
+        "messages": [
+            {
+                "id": m.id,
+                "sender": m.sender.username,
+                "text": m.text,
+                "created_at": m.created_at.strftime("%H:%M"),
+                "is_me": m.sender == request.user
+            }
+            for m in messages
+        ]
+    })
+
+
+@login_required
+def api_send_message(request):
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "error": "POST required"}, status=405)
+
+    receiver_id = request.POST.get("receiver_id")
+    text = request.POST.get("text")
+
+    receiver = User.objects.filter(id=receiver_id).first()
+    if not receiver:
+        return JsonResponse({"status": "error", "error": "Receiver not found"}, status=404)
+
+    Message.objects.create(
+        sender=request.user,
+        receiver=receiver,
+        text=text
+    )
+
+    return JsonResponse({"status": "ok"})
+

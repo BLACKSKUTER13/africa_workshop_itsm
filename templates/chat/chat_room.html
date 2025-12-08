@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="section-header">
+    <h2>Чат с {{ other.username }}</h2>
+</div>
+
+<div id="chat-box" class="section"
+     style="height: 400px; overflow-y: auto; margin-bottom: 20px;">
+</div>
+
+<div class="form-card">
+    <label>Сообщение:</label>
+    <input id="msg-input" class="chat-input" placeholder="Введите текст...">
+
+    <button id="msg-send" class="btn btn-primary btn-full" style="margin-top:12px">
+        Отправить
+    </button>
+</div>
+
+
+<!-- CSRF + COOKIE -->
+<script>
+// === Получение csrf-токена из cookie ===
+function getCookie(name) {
+    let value = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+                value = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return value;
+}
+
+const csrftoken = getCookie("csrftoken");
+</script>
+
+
+<script>
+// ID собеседника
+let other_id = {{ other.id }};
+let chatBox = document.getElementById("chat-box");
+
+
+// === Загрузка сообщений ===
+function loadMessages() {
+    fetch(`/api/chat/get/${other_id}/`)
+        .then(r => r.json())
+        .then(data => {
+
+            chatBox.innerHTML = "";
+
+            data.messages.forEach(m => {
+                let div = document.createElement("div");
+                div.style.margin = "8px 0";
+                div.style.textAlign = m.is_me ? "right" : "left";
+
+                div.innerHTML =
+                    `<div style="display:inline-block;
+                                 padding:8px 12px;
+                                 border-radius:10px;
+                                 background:${m.is_me ? '#38bdf8' : '#1e293b'};
+                                 color:${m.is_me ? '#0f172a' : '#e2e8f0'};">
+                        <b>${m.is_me ? "Вы" : m.sender}:</b> ${m.text}
+                     </div>`;
+
+                chatBox.appendChild(div);
+            });
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+}
+
+
+// === Отправка сообщения ===
+document.getElementById("msg-send").onclick = function () {
+    let text = document.getElementById("msg-input").value.trim();
+    if (!text) return;
+
+    fetch("/api/chat/send/", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrftoken,
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+            "receiver_id": other_id,
+            "text": text
+        })
+    })
+    .then(() => {
+        document.getElementById("msg-input").value = "";
+        loadMessages();
+    });
+};
+
+
+// === Авто-обновление чата ===
+setInterval(loadMessages, 2000);
+
+// первый вызов
+loadMessages();
+</script>
+
+{% endblock %}

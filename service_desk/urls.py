@@ -23,4 +23,11 @@ urlpatterns = [
     path('itsm/services/create/', views.service_create, name='service_create'),
     path('itsm/services/<int:pk>/edit/', views.service_edit, name='service_edit'),
     path('itsm/services/<int:pk>/delete/', views.service_delete, name='service_delete'),
+
+    path('chat/', views.chat_list, name='chat_list'),
+    path('chat/<int:user_id>/', views.chat_room, name='chat_room'),
+
+    # API
+    path('api/chat/send/', views.api_send_message, name='api_send_message'),
+    path('api/chat/get/<int:user_id>/', views.api_get_messages, name='api_get_messages'),
 ]
