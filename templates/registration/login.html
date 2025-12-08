@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="section-header">
+    <h2>Вход в систему</h2>
+    <p>Авторизация для работников</p>
+</div>
+
+<form method="post" class="form-card section-narrow">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <input type="hidden" name="next" value="{% url 'service_desk:itsm_dashboard' %}">
+
+    <button class="btn btn-primary btn-full mt-2">Войти</button>
+</form>
+
+{% endblock %}

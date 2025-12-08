@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="section-header">
+    <h2>ITSM Панель</h2>
+    <p>Рабочие инструменты сотрудников</p>
+</div>
+
+<div class="cards-grid">
+    <a href="{% url 'service_desk:incidents_list' %}" class="card card-link">
+        <h3 class="card-title">Инциденты</h3>
+        <p class="card-text">Просмотр, назначение и обработка обращений</p>
+    </a>
+
+    <a href="{% url 'service_desk:services_list' %}" class="card card-link">
+        <h3 class="card-title">Услуги</h3>
+        <p class="card-text">Управление каталогом услуг</p>
+    </a>
+</div>
+
+{% endblock %}

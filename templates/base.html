@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+
+    <title>{% block title %}Африканская мастерская{% endblock %}</title>
+
+    <!-- Подключаем НЕО-тему -->
+    <link rel="stylesheet" href="/static/css/style.css">
+
+</head>
+<body>
+
+<!-- CANVAS-ФОН -->
+<canvas id="bg-canvas"></canvas>
+
+<div class="app-shell">
+
+    <!-- HEADER -->
+    <header class="main-header">
+        <div class="logo-block">
+            <div class="logo-circle">AM</div>
+            <div>
+                <h1 class="app-title">Африканская мастерская</h1>
+                <p class="app-subtitle">ITSM система</p>
+            </div>
+        </div>
+
+        <nav class="main-nav">
+
+            <a class="nav-link" href="{% url 'service_desk:index' %}">Главная</a>
+
+            {% if user.is_authenticated %}
+                <a class="nav-link" href="{% url 'service_desk:itsm_dashboard' %}">
+                    ITSM
+                </a>
+
+                <!-- Logout через POST -->
+                <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button class="nav-link nav-link-accent" type="submit">
+                        Выйти ({{ user.username }})
+                    </button>
+                </form>
+            {% else %}
+                <a class="nav-link nav-link-accent" href="{% url 'login' %}">
+                    Вход
+                </a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="main-content section section-narrow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="main-footer">
+        © Африканская мастерская, 2025<br>
+        ITSM-портал для внутренних сотрудников
+    </footer>
+</div>
+
+<!-- JS фон -->
+<script src="/static/js/canvas.js"></script>
+
+</body>
+</html>

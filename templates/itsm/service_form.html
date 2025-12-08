@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="section-header">
+    <h2>{{ title }}</h2>
+</div>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button class="btn btn-primary btn-full mt-3">Сохранить</button>
+</form>
+
+<a href="{% url 'service_desk:services_list' %}" class="btn btn-secondary mt-3">Назад</a>
+
+{% endblock %}

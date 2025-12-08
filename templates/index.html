@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="section-header">
+    <h2>Каталог услуг</h2>
+    <p>Выберите услугу или отправьте заявку</p>
+</div>
+
+<div class="cards-grid">
+    {% for service in services %}
+        <a class="card card-link" href="{% url 'service_desk:create_incident_public' %}">
+            <h3 class="card-title">{{ service.name }}</h3>
+            <p class="card-price">{{ service.price }} ₽</p>
+            <p class="card-text">{{ service.description }}</p>
+        </a>
+    {% empty %}
+        <p class="cell-empty">Пока нет услуг</p>
+    {% endfor %}
+</div>
+
+<div class="section-actions">
+    <a href="{% url 'service_desk:create_incident_public' %}"
+       class="btn btn-primary btn-full">Отправить заявку</a>
+
+    {% if not user.is_authenticated %}
+    <a href="{% url 'login' %}" class="btn btn-secondary btn-full">Вход для работников</a>
+    {% endif %}
+</div>
+{% endblock %}

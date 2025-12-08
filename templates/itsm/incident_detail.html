@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="section-header">
+    <h2>Инцидент #{{ incident.id }}</h2>
+    <p>Подробная информация и управление</p>
+</div>
+
+<div class="detail-card mb-4">
+    <dl class="detail-list">
+        <div class="detail-row">
+            <dt>Услуга</dt>
+            <dd>{{ incident.service.name }}</dd>
+        </div>
+
+        <div class="detail-row">
+            <dt>Комментарий</dt>
+            <dd>{{ incident.comment }}</dd>
+        </div>
+
+        <div class="detail-row">
+            <dt>Статус</dt>
+            <dd>
+                <span class="badge badge-status-{{ incident.status }}">
+                    {{ incident.get_status_display }}
+                </span>
+            </dd>
+        </div>
+
+        <div class="detail-row">
+            <dt>Создано</dt>
+            <dd>{{ incident.created_at }}</dd>
+        </div>
+
+        <div class="detail-row">
+            <dt>Назначено технику</dt>
+            <dd>{{ incident.assigned_to|default:"не назначено" }}</dd>
+        </div>
+    </dl>
+</div>
+
+<hr>
+
+{% if techs %}
+<h3>Назначить техника</h3>
+
+<form method="post" class="form-card mb-4">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="assign">
+
+    <label for="assigned_to">Техник:</label>
+    <select id="assigned_to" name="assigned_to">
+        <option value="">Не назначено</option>
+        {% for tech in techs %}
+            <option value="{{ tech.id }}"
+                {% if incident.assigned_to and incident.assigned_to.id == tech.id %}selected{% endif %}
+            >
+                {{ tech.username }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <button class="btn btn-primary btn-full mt-3">Сохранить</button>
+</form>
+{% endif %}
+
+{% if can_edit %}
+<h3>Изменить статус</h3>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="status">
+
+    <label for="status">Новый статус:</label>
+    <select name="status" id="status">
+        {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if value == incident.status %}selected{% endif %}>
+                {{ label }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <button class="btn btn-success btn-full mt-3">Обновить статус</button>
+</form>
+{% endif %}
+
+<hr>
+
+<a href="{% url 'service_desk:incidents_list' %}" class="btn btn-secondary mt-3">Назад</a>
+
+{% endblock %}
