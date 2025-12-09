@@ -15,6 +15,7 @@
     <thead>
         <tr>
             <th>Название</th>
+            <th>Описание</th>
             <th>Цена</th>
             <th>Активна</th>
             <th></th>
@@ -25,8 +26,16 @@
     {% for service in services %}
         <tr>
             <td>{{ service.name }}</td>
+
+            <!-- Описание -->
+            <td>{{ service.description|truncatechars:60 }}</td>
+
+            <!-- Цена -->
             <td>{{ service.price }}</td>
+
+            <!-- Активна -->
             <td>{{ service.is_active|yesno:"Да,Нет" }}</td>
+
             <td class="cell-actions">
                 <a href="{% url 'service_desk:service_edit' service.id %}" class="btn btn-secondary btn-sm">Изменить</a>
                 <a href="{% url 'service_desk:service_delete' service.id %}" class="btn btn-danger btn-sm">Удалить</a>
@@ -34,7 +43,7 @@
         </tr>
     {% empty %}
         <tr>
-            <td colspan="4" class="cell-empty">Услуг пока нет</td>
+            <td colspan="5" class="cell-empty">Услуг пока нет</td>
         </tr>
     {% endfor %}
     </tbody>
