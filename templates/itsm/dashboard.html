@@ -1,29 +1,50 @@
+
 {% extends 'base.html' %}
 
 {% block content %}
+<section class="section">
+    <div class="section-header">
+        <h2>ITSM панель</h2>
+        <p>Рабочее пространство для администратора, сотрудника и тех. специалиста.</p>
+    </div>
 
-<div class="section-header">
-    <h2>ITSM Панель</h2>
-    <p>Рабочие инструменты сотрудников</p>
-</div>
+    <div class="cards-grid">
+        <a href="{% url 'service_desk:incidents_list' %}" class="card card-link">
+            <h3 class="card-title">Инциденты</h3>
+            <p class="card-text">
+                {% if is_admin %}
+                    Полный контроль над заявками: просмотр, изменение статусов и назначение ответственных.
+                {% elif is_tech %}
+                    Работа с инцидентами: просмотр и изменение статуса заявок (без назначения ответственных).
+                {% elif is_employee %}
+                    Просмотр инцидентов без возможности их изменения.
+                {% else %}
+                    Просмотр списка инцидентов.
+                {% endif %}
+            </p>
+        </a>
 
-<div class="cards-grid">
+        <a href="{% url 'service_desk:services_list' %}" class="card card-link">
+            <h3 class="card-title">Услуги</h3>
+            <p class="card-text">
+                {% if is_admin %}
+                    Управление каталогом услуг: создание, редактирование и удаление.
+                {% elif is_employee %}
+                    Ваша основная зона ответственности: создание, редактирование и удаление услуг.
+                {% elif is_tech %}
+                    Просмотр каталога услуг без возможности изменения.
+                {% else %}
+                    Просмотр доступных корпоративных услуг.
+                {% endif %}
+            </p>
+        </a>
 
-    <a href="{% url 'service_desk:incidents_list' %}" class="card card-link">
-        <h3 class="card-title">Инциденты</h3>
-        <p class="card-text">Просмотр обращений</p>
-    </a>
-
-    <a href="{% url 'service_desk:services_list' %}" class="card card-link">
-        <h3 class="card-title">Услуги</h3>
-        <p class="card-text">Управление каталогом</p>
-    </a>
-
-    <a href="{% url 'service_desk:chat_list' %}" class="card card-link">
-        <h3 class="card-title">Чат сотрудников</h3>
-        <p class="card-text">Общение внутри компании</p>
-    </a>
-
-</div>
-
+        <a href="{% url 'service_desk:chat_list' %}" class="card card-link">
+            <h3 class="card-title">Мессенджер</h3>
+            <p class="card-text">
+                Внутренний чат для общения между сотрудниками, тех. специалистами и администраторами.
+            </p>
+        </a>
+    </div>
+</section>
 {% endblock %}

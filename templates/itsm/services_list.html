@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 
 {% block content %}
@@ -5,9 +6,12 @@
 <div class="section-header-row">
     <div>
         <h2>Услуги</h2>
-        <p>Каталог предлагаемых сервисов</p>
+        <p>Каталог предоставляемых сервисов.</p>
     </div>
-    <a href="{% url 'service_desk:service_create' %}" class="btn btn-primary">Создать услугу</a>
+
+    {% if can_manage %}
+        <a href="{% url 'service_desk:service_create' %}" class="btn btn-primary">Создать услугу</a>
+    {% endif %}
 </div>
 
 <div class="table-card mt-3">
@@ -18,32 +22,34 @@
             <th>Описание</th>
             <th>Цена</th>
             <th>Активна</th>
-            <th></th>
+            <th class="cell-actions">Действия</th>
         </tr>
     </thead>
-
     <tbody>
     {% for service in services %}
         <tr>
             <td>{{ service.name }}</td>
-
-            <!-- Описание -->
-            <td>{{ service.description|truncatechars:60 }}</td>
-
-            <!-- Цена -->
+            <td>{{ service.description|default:"—" }}</td>
             <td>{{ service.price }}</td>
-
-            <!-- Активна -->
-            <td>{{ service.is_active|yesno:"Да,Нет" }}</td>
-
+            <td>
+                {% if service.is_active %}
+                    <span class="badge badge-status-new">Да</span>
+                {% else %}
+                    <span class="badge badge-status-cancelled">Нет</span>
+                {% endif %}
+            </td>
             <td class="cell-actions">
-                <a href="{% url 'service_desk:service_edit' service.id %}" class="btn btn-secondary btn-sm">Изменить</a>
-                <a href="{% url 'service_desk:service_delete' service.id %}" class="btn btn-danger btn-sm">Удалить</a>
+                {% if can_manage %}
+                    <a href="{% url 'service_desk:service_edit' service.id %}" class="btn btn-secondary btn-sm">Изменить</a>
+                    <a href="{% url 'service_desk:service_delete' service.id %}" class="btn btn-danger btn-sm">Удалить</a>
+                {% else %}
+                    <span class="cell-empty" style="font-size: 11px;">Только просмотр</span>
+                {% endif %}
             </td>
         </tr>
     {% empty %}
         <tr>
-            <td colspan="5" class="cell-empty">Услуг пока нет</td>
+            <td colspan="5" class="cell-empty">Услуг пока нет.</td>
         </tr>
     {% endfor %}
     </tbody>
