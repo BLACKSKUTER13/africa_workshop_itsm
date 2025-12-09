@@ -2,25 +2,20 @@
 
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.contrib.auth.models import User
 
 from .models import Service, Incident, Message
 from .forms import PublicIncidentForm, ServiceForm
 
-
-# ========================================
-#        ПУБЛИЧНАЯ ЧАСТЬ САЙТА
-# ========================================
+# --------------------------- ПУБЛИКА -----------------------------
 
 def index(request):
-    """Каталог услуг + кнопка отправки заявки + вход для работников."""
     services = Service.objects.filter(is_active=True)
     return render(request, 'index.html', {'services': services})
 
 
 def create_incident_public(request):
-    """Форма отправки заявки с главной страницы."""
     if request.method == 'POST':
         form = PublicIncidentForm(request.POST)
         if form.is_valid():
@@ -32,106 +27,89 @@ def create_incident_public(request):
             return render(request, 'request_success.html', {'incident': incident})
     else:
         form = PublicIncidentForm()
-
     return render(request, 'create_incident_public.html', {'form': form})
 
 
 def workers_login_redirect(request):
-    """Кнопка 'Вход для работников' → стандартная логин-страница Django."""
     return redirect('/accounts/login/')
 
 
-# ========================================
-#               ITSM
-# ========================================
+# --------------------------- ПРАВА -------------------------------
+
+def itsm_access(user):
+    return user.is_authenticated
+
+
+def services_edit_access(user):
+    """Разрешено сотрудникам и админам."""
+    return (
+        user.is_superuser
+        or user.is_staff
+        or not user.groups.filter(name="Tech").exists()
+    )
+
+
+# --------------------------- ITSM -------------------------------
 
 @login_required
+@user_passes_test(itsm_access)
 def itsm_dashboard(request):
-    """Главная страница ITSM."""
-    return render(request, 'itsm/dashboard.html')
+    is_tech = request.user.groups.filter(name="Tech").exists()
+    is_admin = request.user.is_superuser or request.user.is_staff
+    return render(request, 'itsm/dashboard.html', {
+        "is_tech": is_tech,
+        "is_admin": is_admin
+    })
 
 
 @login_required
+@user_passes_test(itsm_access)
 def incidents_list(request):
-    """
-    Роли:
-    - Админ/staff → видит все инциденты
-    - Техник (группа Tech) → только назначенные
-    - Обычный сотрудник → только созданные им
-    """
     user = request.user
 
-    if user.is_superuser or user.is_staff:
-        incidents = Incident.objects.all().order_by('-created_at')
-
-    elif user.groups.filter(name='Tech').exists():
-        incidents = Incident.objects.filter(
-            assigned_to=user
-        ).order_by('-created_at')
-
+    # Админ и техник → видят все
+    if user.is_superuser or user.is_staff or user.groups.filter(name='Tech').exists():
+        incidents = Incident.objects.all()
     else:
-        incidents = Incident.objects.filter(
-            created_by=user
-        ).order_by('-created_at')
+        return HttpResponseForbidden("Нет доступа.")
 
+    incidents = incidents.order_by('-created_at')
     return render(request, 'itsm/incidents_list.html', {'incidents': incidents})
 
 
 @login_required
+@user_passes_test(itsm_access)
 def incident_detail(request, pk):
-    """
-    Доступ:
-    ✔ Админ/staff → всегда
-    ✔ Техник → если назначен
-    ✔ Сотрудник → если он автор
-    """
     incident = get_object_or_404(Incident, pk=pk)
     user = request.user
 
     # Может ли менять статус?
     can_edit_status = (
-        user.is_superuser or
-        user.is_staff or
-        (user.groups.filter(name='Tech').exists() and incident.assigned_to == user)
+        user.is_superuser
+        or user.is_staff
+        or user.groups.filter(name='Tech').exists()
     )
 
-    # Может ли видеть инцидент? (доступ в принципе)
-    allowed = (
-        user.is_superuser or
-        user.is_staff or
-        incident.created_by == user or
-        incident.assigned_to == user
-    )
-
-    if not allowed:
-        return HttpResponseForbidden("У вас нет доступа к этому инциденту.")
-
-    # =============================
-    #           POST ОБРАБОТКА
-    # =============================
     if request.method == "POST":
         action = request.POST.get("action")
 
-        # --- Изменение статуса ---
         if action == "status" and can_edit_status:
             new_status = request.POST.get("status")
             if new_status in dict(Incident.STATUS_CHOICES):
                 incident.status = new_status
                 incident.save()
 
-        # --- Назначение технику (только admin/staff) ---
         if action == "assign" and (user.is_superuser or user.is_staff):
             tech_id = request.POST.get("assigned_to")
             if tech_id:
                 tech = User.objects.filter(id=tech_id).first()
                 incident.assigned_to = tech
             else:
-                incident.assigned_to = None  # снять назначение
+                incident.assigned_to = None
             incident.save()
 
         return redirect("service_desk:incident_detail", pk=incident.pk)
 
-    # Список техников (только для админа/staff)
     techs = None
     if user.is_superuser or user.is_staff:
         techs = User.objects.filter(groups__name="Tech")
@@ -145,21 +123,33 @@ def incident_detail(request, pk):
 
 
 # ========================================
-#          УСЛУГИ (ТОЛЬКО staff/admin)
+#               УСЛУГИ
 # ========================================
 
-def is_admin(user):
-    return user.is_superuser or user.is_staff
-
-
-@user_passes_test(is_admin)
+@login_required
 def services_list(request):
+    """Смотреть услуги могут все сотрудники."""
     services = Service.objects.all()
-    return render(request, 'itsm/services_list.html', {'services': services})
+
+    # employee и admin могут создавать услуги → передаем флаг в шаблон
+    can_edit = (
+        request.user.is_superuser
+        or request.user.is_staff
+        or not request.user.groups.filter(name="Tech").exists()
+    )
+
+    return render(request, 'itsm/services_list.html', {
+        'services': services,
+        'can_edit': can_edit
+    })
 
 
-@user_passes_test(is_admin)
+@login_required
 def service_create(request):
+    """Создавать услугу могут admin / staff / employee, но НЕ Tech."""
+    if request.user.groups.filter(name="Tech").exists():
+        return HttpResponseForbidden("Нет прав на создание услуг.")
+
     if request.method == 'POST':
         form = ServiceForm(request.POST)
         if form.is_valid():
@@ -167,12 +157,21 @@ def service_create(request):
             return redirect('service_desk:services_list')
     else:
         form = ServiceForm()
-    return render(request, 'itsm/service_form.html', {'form': form, 'title': 'Создать услугу'})
+
+    return render(request, 'itsm/service_form.html', {
+        'form': form,
+        'title': 'Создать услугу'
+    })
 
 
-@user_passes_test(is_admin)
+@login_required
 def service_edit(request, pk):
+    """Редактировать услугу могут admin / staff / employee, но НЕ Tech."""
+    if request.user.groups.filter(name="Tech").exists():
+        return HttpResponseForbidden("Нет прав на редактирование услуг.")
+
     service = get_object_or_404(Service, pk=pk)
+
     if request.method == 'POST':
         form = ServiceForm(request.POST, instance=service)
         if form.is_valid():
@@ -180,36 +179,40 @@ def service_edit(request, pk):
             return redirect('service_desk:services_list')
     else:
         form = ServiceForm(instance=service)
-    return render(request, 'itsm/service_form.html', {'form': form, 'title': 'Редактировать услугу'})
 
-
-@user_passes_test(is_admin)
-def service_delete(request, pk):
-    service = get_object_or_404(Service, pk=pk)
-    if request.method == 'POST':
-        service.delete()
-        return redirect('service_desk:services_list')
-    return render(request, 'itsm/service_confirm_delete.html', {'service': service})
-
-# ========================================
-#                ЧАТ
-# ========================================
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import Message
+    return render(request, 'itsm/service_form.html', {
+        'form': form,
+        'title': 'Редактировать услугу'
+    })
 
 
 @login_required
+def service_delete(request, pk):
+    """Удалять услугу могут admin / staff / employee, но НЕ Tech."""
+    if request.user.groups.filter(name="Tech").exists():
+        return HttpResponseForbidden("Нет прав на удаление услуг.")
+
+    service = get_object_or_404(Service, pk=pk)
+
+    if request.method == 'POST':
+        service.delete()
+        return redirect('service_desk:services_list')
+
+    return render(request, 'itsm/service_confirm_delete.html', {
+        'service': service
+    })
+
+
+# ----------------------------- ЧАТ -------------------------------
+
+@login_required
 def chat_list(request):
-    """Список пользователей, с которыми можно общаться."""
     users = User.objects.exclude(id=request.user.id)
     return render(request, "chat/chat_list.html", {"users": users})
 
 
 @login_required
 def chat_room(request, user_id):
-    """Комната чата 1-на-1."""
     other = get_object_or_404(User, id=user_id)
     return render(request, "chat/chat_room.html", {"other": other})
 
@@ -256,4 +259,3 @@ def api_send_message(request):
     )
 
     return JsonResponse({"status": "ok"})
-

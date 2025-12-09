@@ -7,7 +7,12 @@
         <h2>Услуги</h2>
         <p>Каталог предлагаемых сервисов</p>
     </div>
-    <a href="{% url 'service_desk:service_create' %}" class="btn btn-primary">Создать услугу</a>
+
+    {% if can_edit %}
+    <a href="{% url 'service_desk:service_create' %}" class="btn btn-primary">
+        Создать услугу
+    </a>
+    {% endif %}
 </div>
 
 <div class="table-card mt-3">
@@ -26,19 +31,22 @@
     {% for service in services %}
         <tr>
             <td>{{ service.name }}</td>
-
-            <!-- Описание -->
             <td>{{ service.description|truncatechars:60 }}</td>
-
-            <!-- Цена -->
             <td>{{ service.price }}</td>
-
-            <!-- Активна -->
             <td>{{ service.is_active|yesno:"Да,Нет" }}</td>
 
             <td class="cell-actions">
-                <a href="{% url 'service_desk:service_edit' service.id %}" class="btn btn-secondary btn-sm">Изменить</a>
-                <a href="{% url 'service_desk:service_delete' service.id %}" class="btn btn-danger btn-sm">Удалить</a>
+                {% if can_edit %}
+                    <a href="{% url 'service_desk:service_edit' service.id %}"
+                       class="btn btn-secondary btn-sm">Изменить</a>
+
+                    <a href="{% url 'service_desk:service_delete' service.id %}"
+                       class="btn btn-danger btn-sm">Удалить</a>
+                {% else %}
+                    <span style="color:var(--text-muted);font-size:12px;">
+                        нет доступа
+                    </span>
+                {% endif %}
             </td>
         </tr>
     {% empty %}

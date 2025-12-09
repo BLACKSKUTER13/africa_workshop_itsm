@@ -1,27 +1,27 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block content %}
 
 <div class="section-header">
     <h2>ITSM Панель</h2>
-    <p>Рабочие инструменты сотрудников</p>
 </div>
 
 <div class="cards-grid">
 
-    <a href="{% url 'service_desk:incidents_list' %}" class="card card-link">
+    {% if is_admin or is_tech %}
+    <a class="card card-link" href="{% url 'service_desk:incidents_list' %}">
         <h3 class="card-title">Инциденты</h3>
-        <p class="card-text">Просмотр обращений</p>
+        <p class="card-text">Просмотр и обработка инцидентов</p>
     </a>
+    {% endif %}
 
-    <a href="{% url 'service_desk:services_list' %}" class="card card-link">
+    <a class="card card-link" href="{% url 'service_desk:services_list' %}">
         <h3 class="card-title">Услуги</h3>
-        <p class="card-text">Управление каталогом</p>
+        <p class="card-text">Каталог ИТ-услуг</p>
     </a>
 
-    <a href="{% url 'service_desk:chat_list' %}" class="card card-link">
-        <h3 class="card-title">Чат сотрудников</h3>
-        <p class="card-text">Общение внутри компании</p>
+    <a class="card card-link" href="{% url 'service_desk:chat_list' %}">
+        <h3 class="card-title">Чат</h3>
+        <p class="card-text">Внутренняя переписка сотрудников</p>
     </a>
 
 </div>
